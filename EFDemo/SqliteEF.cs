@@ -14,43 +14,33 @@
     public class Person
     {
         public int PersonId { get; set; }
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
         public DateTime DateOfBirth { get; set; }
         public bool IsHealthy { get; set; }
         public GenderType Gender { get; set; }
         public int Height { get; set; }
         public int CountryId { get; set; }
-        public Country? Country { get; set; }
+        public Country Country { get; set; }
 
-        public override string ToString()
-        {
-            return $"{this.PersonId} {this.FirstName} {this.LastName}";
-        }
     }
 
 
     public class Country
     {
         public int CountryId { get; set; }
-        public string? Name { get; set; }
+        public string Name { get; set; }
 
         // Optional
-        public List<Person>? People { get; set; }
-
-        public override string ToString()
-        {
-            return $"{this.CountryId} {this.Name}";
-
-        }
+        public List<Person> People { get; set; }
     }
 
     public class PeopleContext : DbContext
     {
         private readonly string pathToDb;
 
-        public DbSet<Person>? People { get; set; }
-        public DbSet<Country>? Countries { get; set; }
+        public DbSet<Person> People { get; set; }
+        public DbSet<Country> Countries { get; set; }
 
         public PeopleContext(string pathToDb = @"c:\temp\people.db")
         {
@@ -60,7 +50,7 @@
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite("Data Source=" + pathToDb);
-            // optionsBuilder.LogTo(Console.WriteLine);
+            optionsBuilder.LogTo(a=> System.IO.File.AppendAllText(@"c:\temp\efdemo.log", a));
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

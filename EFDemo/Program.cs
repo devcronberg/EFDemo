@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
+using TableParser;
+
 namespace EFDemo
 {
     internal class Program
@@ -7,68 +9,138 @@ namespace EFDemo
         static string pathToDb = @"c:\temp\people.db";
         static void Main(string[] args)
         {
-            ShowPeople();
-            ShowPeopleWithCountry();
+            Console.WriteLine("EFDemo - view sql/ef log in efdemo.log");
+            Console.WriteLine();
+
+            ShowAllPeople();
+            ShowPeopleFilteredAndSorted(count: 10);
+            ShowPeopleWithCountry(count: 10);
+            
+            EditPersonFirstName(1, "**");
+            ShowAllPeople(count: 10);
+
+            var newId = InsertNewPerson("a", "b");
+            
+            DeletePerson(201);
+            
+
         }
 
-        private static void ShowPeople()
+        private static void EditPersonFirstName(int personId, string firstName)
         {
+            WriteHeader("EditPersonFirstName");
+            using (PeopleContext c = new PeopleContext(pathToDb))
+            {
+                var person = c.People.FirstOrDefault(i=>i.PersonId == personId);
+                person.FirstName = firstName;
+                c.SaveChanges();
+                Console.WriteLine($"Firstname on person with {personId} set to {firstName}");
+                Console.WriteLine();
+            }
+        }
+
+        private static int InsertNewPerson(string firstName, string lastName)
+        {
+            WriteHeader("InsertNewPerson");
+            using (PeopleContext c = new PeopleContext(pathToDb))
+            {
+                var person = new Person();
+                person.FirstName = firstName;
+                person.LastName = lastName;
+                person.CountryId = 1;   // default
+                c.People.Add(person);
+                c.SaveChanges();
+                Console.WriteLine($"New person added with id {person.PersonId}");
+                Console.WriteLine();
+                return person.PersonId;
+            }
+        }
+
+        private static void DeletePerson(int personId)
+        {
+            WriteHeader("DeletePerson");
+            using (PeopleContext c = new PeopleContext(pathToDb))
+            {
+                var person = c.People.FirstOrDefault(i => i.PersonId == personId);
+                c.People.Remove(person);
+                c.SaveChanges();
+                Console.WriteLine($"Person with id {person.PersonId} removed");
+                Console.WriteLine();
+            }
+        }
+
+        private static void ShowPeopleFilteredAndSorted(int? count = null)
+        {
+            WriteHeader("ShowPeople");
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var res = c.People?.Where(i => 
                     i.Height > 170 && 
                     i.IsHealthy)
-                    .OrderBy(i => i.LastName);
-                WriteExpression(res);
-                WriteSql(res);
-                WriteSeparator("Result");
-                res?.ToList().ForEach(i => Console.WriteLine(i));
+                    .OrderBy(i => i.PersonId)
+                    .Take(count??1000);                                              
+                var table = res?.ToStringTable(
+                    u => u.PersonId,
+                    u => u.FirstName,
+                    u => u.LastName
+                );
+                Console.WriteLine(table);
             }
         }
 
-        private static void ShowPeopleWithCountry(int count = 10)
+        private static void ShowAllPeople(int? count = null)
         {
+            WriteHeader("ShowAllPeople");
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
-                var res = c.People?.Include(i=>i.Country).Take(count);
-                WriteExpression(res);
-                WriteSql(res);
-                WriteSeparator("Result");
-                res?.ToList().ForEach(i =>
-                    Console.WriteLine($"{i.PersonId} {i.FirstName} {i.LastName} {i?.Country?.Name}"));
+                var res = c.People
+                    .OrderBy(i => i.PersonId)
+                    .Take(count ?? 1000);
+                var table = res?.ToStringTable(
+                    u => u.PersonId,
+                    u => u.FirstName,
+                    u => u.LastName
+                );
+                Console.WriteLine(table);
             }
         }
 
-        static void WriteSeparator(string txt = "", int count = 25)
+        private static void ShowPeopleWithCountry(int? count = null)
+        {
+            WriteHeader("ShowPeopleWithCountry");
+            using (PeopleContext c = new PeopleContext(pathToDb))
+            {
+                var res = c.People?.Include(i=>i.Country).Take(count??1000);                      
+                var table = res?.ToStringTable(
+                    u => u.PersonId,
+                    u => u.FirstName,
+                    u => u.LastName,
+                    u => u.Country.CountryId,
+                    u => u.Country.Name
+                );
+                Console.WriteLine(table);
+            }
+        }
+
+        static void WriteHeader(string txt = "", int count = 50)
         {
             if (txt != "")
             {
                 int l = txt.Length;
                 string s = new String('-', (count - l - 2) / 2);
                 string r = $"{s} {txt} {s}";
-                if (r.Length < 25)
+                if (r.Length < count)
                     r += "-";
                 Console.WriteLine(r);
             }
             else
                 Console.WriteLine(new String('-', count));
+            Console.WriteLine();
         }
 
         static void WriteNewLine() {
             Console.WriteLine();
         }
-        static void WriteSql(IQueryable? q)
-        {
-            WriteSeparator("SQL");
-            Console.WriteLine(q?.ToQueryString());
-            WriteNewLine();
-        }
 
-        static void WriteExpression(IQueryable? q)
-        {
-            WriteSeparator("Expression");
-            Console.WriteLine(q?.Expression.ToString().Replace("Microsoft.EntityFrameworkCore.Query.",""));
-            WriteNewLine();
-        }
     }
 }
