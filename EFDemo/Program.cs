@@ -1,4 +1,5 @@
-﻿using MCronberg.Sap.ConsoleOutput.Core;
+﻿using MCronberg.Sap.ConsoleInput.Core;
+using MCronberg.Sap.ConsoleOutput.Core;
 using Microsoft.EntityFrameworkCore;
 
 using TableParser;
@@ -9,44 +10,69 @@ namespace EFDemo
     {
         static string pathToDb = @"c:\temp\people.db";
         static Writer writer = new Writer();
+        static Reader reader = new Reader();
 
         static void Main(string[] args)
         {
-            writer.BigHeader("EFDemo - view sql/ef log in efdemo.log", addNewline: true);
 
-            #region Show
-            ShowPeople(count: 10);
-            ShowPeopleFilteredAndSorted(count: 10);
-            ShowPeopleWithCountry(count: 10);
-            ShowPeopleProjection(count: 10);
-            #endregion
+            int menuId = 0;
+            do
+            {
+                writer.BigHeader("Simple EF demo", addNewline: true);
+                menuId = reader.Menu
+                    ("ShowPeople",
+                    "ShowPeopleFilteredAndSorted",
+                    "ShowPeopleWithCountry",
+                    "ShowPeopleProjection",
+                    "EditPersonFirstName",
+                    "InsertNewPerson",
+                    "DeleteLastPerson",
+                    "Exit"
+                    );
+                Console.Clear();
+                switch (menuId)
+                {
+                    case 1:
+                        ShowPeople(count: 10);
+                        break;
+                    case 2:
+                        ShowPeopleFilteredAndSorted(count: 10);
+                        break;
+                    case 3:
+                        ShowPeopleWithCountry(count: 10);
+                        break;
+                    case 4:
+                        ShowPeopleProjection(count: 10);
+                        break;
+                    case 5:
+                        EditPersonFirstName(1, "**");
+                        ShowPeople(count: 10);
+                        break;
+                    case 6:
+                        var newId = InsertNewPerson("a", "b");
+                        ShowPeople(); break;
+                    case 7:
+                        DeleteLastPerson();
+                        ShowPeople();
+                        break;
+                    case 8:
+                        return;
+                }
+                reader.GetConsoleKey("Press any key");
+                Console.Clear();
 
-            #region Edit            
-            EditPersonFirstName(1, "**");
-            ShowPeople(count: 10);
-            #endregion
-
-            #region Insert
-            var newId = InsertNewPerson("a", "b");
-            ShowPeople();
-            #endregion
-
-            #region Delete
-            DeleteLastPerson();
-            ShowPeople();
-            #endregion
-
+            } while (true);
         }
 
         private static void ShowPeopleProjection(int? count)
         {
             var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
-            writer.SimpleHeader(MethodName, addNewline: true);            
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var res = c.People
                     .OrderBy(i => i.PersonId)
-                    .Select(i=>new PersonProjection { FirstName = i.FirstName, LastName = i.LastName, PersonId = i.PersonId })
+                    .Select(i => new PersonProjection { FirstName = i.FirstName, LastName = i.LastName, PersonId = i.PersonId })
                     .Take(count ?? 1000);
                 var table = res?.ToStringTable(
                     u => u.PersonId,
@@ -64,7 +90,7 @@ namespace EFDemo
             writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
-                var person = c.People.FirstOrDefault(i=>i.PersonId == personId);
+                var person = c.People.FirstOrDefault(i => i.PersonId == personId);
                 person.FirstName = firstName;
                 c.SaveChanges();
                 Console.WriteLine($"Firstname on person with {personId} set to {firstName}");
@@ -96,7 +122,7 @@ namespace EFDemo
             writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
-                var person = c.People.OrderBy(i=>i.PersonId).LastOrDefault();
+                var person = c.People.OrderBy(i => i.PersonId).LastOrDefault();
                 c.People.Remove(person);
                 c.SaveChanges();
                 Console.WriteLine($"Person with id {person.PersonId} removed");
@@ -110,11 +136,11 @@ namespace EFDemo
             writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
-                var res = c.People?.Where(i => 
-                    i.Height > 170 && 
+                var res = c.People?.Where(i =>
+                    i.Height > 170 &&
                     i.IsHealthy)
                     .OrderBy(i => i.PersonId)
-                    .Take(count??1000);                                              
+                    .Take(count ?? 1000);
                 var table = res?.ToStringTable(
                     u => u.PersonId,
                     u => u.FirstName,
@@ -148,7 +174,7 @@ namespace EFDemo
             writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
-                var res = c.People?.Include(i=>i.Country).Take(count??1000);                      
+                var res = c.People?.Include(i => i.Country).Take(count ?? 1000);
                 var table = res?.ToStringTable(
                     u => u.PersonId,
                     u => u.FirstName,
@@ -178,13 +204,15 @@ namespace EFDemo
 
     }
 
-    class PersonProjection {
+    class PersonProjection
+    {
         public int PersonId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string FullName
         {
-            get { 
+            get
+            {
                 return FirstName + " " + LastName;
             }
         }
