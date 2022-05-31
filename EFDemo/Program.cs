@@ -80,7 +80,7 @@ namespace EFDemo
                     u => u.LastName,
                     u => u.FullName
                 );
-                Console.WriteLine(table);
+                writer.Write(table);
             }
         }
 
@@ -93,8 +93,8 @@ namespace EFDemo
                 var person = c.People.FirstOrDefault(i => i.PersonId == personId);
                 person.FirstName = firstName;
                 c.SaveChanges();
-                Console.WriteLine($"Firstname on person with {personId} set to {firstName}");
-                Console.WriteLine();
+                writer.Write($"Firstname on person with {personId} set to {firstName}");
+                writer.NewLine();
             }
         }
 
@@ -110,8 +110,8 @@ namespace EFDemo
                 person.CountryId = 1;   // default
                 c.People.Add(person);
                 c.SaveChanges();
-                Console.WriteLine($"New person added with id {person.PersonId}");
-                Console.WriteLine();
+                writer.Write($"New person added with id {person.PersonId}");
+                writer.NewLine();
                 return person.PersonId;
             }
         }
@@ -125,8 +125,8 @@ namespace EFDemo
                 var person = c.People.OrderBy(i => i.PersonId).LastOrDefault();
                 c.People.Remove(person);
                 c.SaveChanges();
-                Console.WriteLine($"Person with id {person.PersonId} removed");
-                Console.WriteLine();
+                writer.Write($"Person with id {person.PersonId} removed");
+                
             }
         }
 
@@ -146,7 +146,7 @@ namespace EFDemo
                     u => u.FirstName,
                     u => u.LastName
                 );
-                Console.WriteLine(table);
+                writer.Write(table);
             }
         }
 
@@ -164,7 +164,7 @@ namespace EFDemo
                     u => u.FirstName,
                     u => u.LastName
                 );
-                Console.WriteLine(table);
+                writer.Write(table);
             }
         }
 
@@ -182,7 +182,7 @@ namespace EFDemo
                     u => u.Country.CountryId,
                     u => u.Country.Name
                 );
-                Console.WriteLine(table);
+                writer.Write(table);
             }
         }
 
@@ -195,11 +195,11 @@ namespace EFDemo
                 string r = $"{s} {txt} {s}";
                 if (r.Length < count)
                     r += "-";
-                Console.WriteLine(r);
+                writer.Write(r);
             }
             else
-                Console.WriteLine(new String('-', count));
-            Console.WriteLine();
+                writer.Write(new String('-', count));
+            
         }
 
     }
