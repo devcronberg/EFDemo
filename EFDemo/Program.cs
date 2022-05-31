@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MCronberg.Sap.ConsoleOutput.Core;
+using Microsoft.EntityFrameworkCore;
 
 using TableParser;
 
@@ -7,28 +8,60 @@ namespace EFDemo
     internal class Program
     {
         static string pathToDb = @"c:\temp\people.db";
+        static Writer writer = new Writer();
+
         static void Main(string[] args)
         {
-            Console.WriteLine("EFDemo - view sql/ef log in efdemo.log");
-            Console.WriteLine();
+            writer.BigHeader("EFDemo - view sql/ef log in efdemo.log", addNewline: true);
 
-            ShowAllPeople();
+            #region Show
+            ShowPeople(count: 10);
             ShowPeopleFilteredAndSorted(count: 10);
             ShowPeopleWithCountry(count: 10);
-            
+            ShowPeopleProjection(count: 10);
+            #endregion
+
+            #region Edit            
             EditPersonFirstName(1, "**");
-            ShowAllPeople(count: 10);
+            ShowPeople(count: 10);
+            #endregion
 
+            #region Insert
             var newId = InsertNewPerson("a", "b");
-            
-            DeletePerson(201);
-            
+            ShowPeople();
+            #endregion
 
+            #region Delete
+            DeleteLastPerson();
+            ShowPeople();
+            #endregion
+
+        }
+
+        private static void ShowPeopleProjection(int? count)
+        {
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);            
+            using (PeopleContext c = new PeopleContext(pathToDb))
+            {
+                var res = c.People
+                    .OrderBy(i => i.PersonId)
+                    .Select(i=>new PersonProjection { FirstName = i.FirstName, LastName = i.LastName, PersonId = i.PersonId })
+                    .Take(count ?? 1000);
+                var table = res?.ToStringTable(
+                    u => u.PersonId,
+                    u => u.FirstName,
+                    u => u.LastName,
+                    u => u.FullName
+                );
+                Console.WriteLine(table);
+            }
         }
 
         private static void EditPersonFirstName(int personId, string firstName)
         {
-            WriteHeader("EditPersonFirstName");
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var person = c.People.FirstOrDefault(i=>i.PersonId == personId);
@@ -41,7 +74,8 @@ namespace EFDemo
 
         private static int InsertNewPerson(string firstName, string lastName)
         {
-            WriteHeader("InsertNewPerson");
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var person = new Person();
@@ -56,12 +90,13 @@ namespace EFDemo
             }
         }
 
-        private static void DeletePerson(int personId)
+        private static void DeleteLastPerson()
         {
-            WriteHeader("DeletePerson");
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
-                var person = c.People.FirstOrDefault(i => i.PersonId == personId);
+                var person = c.People.OrderBy(i=>i.PersonId).LastOrDefault();
                 c.People.Remove(person);
                 c.SaveChanges();
                 Console.WriteLine($"Person with id {person.PersonId} removed");
@@ -71,7 +106,8 @@ namespace EFDemo
 
         private static void ShowPeopleFilteredAndSorted(int? count = null)
         {
-            WriteHeader("ShowPeople");
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var res = c.People?.Where(i => 
@@ -88,9 +124,10 @@ namespace EFDemo
             }
         }
 
-        private static void ShowAllPeople(int? count = null)
+        private static void ShowPeople(int? count = null)
         {
-            WriteHeader("ShowAllPeople");
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var res = c.People
@@ -107,7 +144,8 @@ namespace EFDemo
 
         private static void ShowPeopleWithCountry(int? count = null)
         {
-            WriteHeader("ShowPeopleWithCountry");
+            var MethodName = System.Reflection.MethodBase.GetCurrentMethod().Name;
+            writer.SimpleHeader(MethodName, addNewline: true);
             using (PeopleContext c = new PeopleContext(pathToDb))
             {
                 var res = c.People?.Include(i=>i.Country).Take(count??1000);                      
@@ -138,9 +176,17 @@ namespace EFDemo
             Console.WriteLine();
         }
 
-        static void WriteNewLine() {
-            Console.WriteLine();
-        }
+    }
 
+    class PersonProjection {
+        public int PersonId { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string FullName
+        {
+            get { 
+                return FirstName + " " + LastName;
+            }
+        }
     }
 }
