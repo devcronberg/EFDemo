@@ -11,9 +11,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="MCronberg.Sap.ConsoleInput.Core" Version="1.0.5" />
-	  <PackageReference Include="MCronberg.Sap.ConsoleOutput.Core" Version="1.0.3" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.5" />
+	  <PackageReference Include="MCronberg.Sap.ConsoleInput.Core" Version="1.0.7" />
+	  <PackageReference Include="MCronberg.Sap.ConsoleOutput.Core" Version="1.0.7" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.6" />
 	</ItemGroup>
 
 </Project>
